@@ -2,7 +2,8 @@
 
 <p align='center'><img src='_out/blink-35.jpg' /></p>
 
-This version of [StarGAN2] (coined as 'Post-modern Style Transfer') is intended mostly for fellow artists, who rarely look at scientific metrics, but rather need a working creative tool. At least, this is what I use nearly daily myself. Here is few pieces, made with it: [Terminal Blink](https://vimeo.com/460679408), [Occurro](https://vimeo.com/527118906), [etc.](https://vimeo.com/445930853)
+This version of [StarGAN2] (coined as 'Post-modern Style Transfer') is intended mostly for fellow artists, who rarely look at scientific metrics, but rather need a working creative tool. At least, this is what I use nearly daily myself.  
+Here are few pieces, made with it: [Terminal Blink](https://vimeo.com/460679408), [Occurro](https://vimeo.com/527118906), [etc.](https://vimeo.com/445930853)  
 Tested on Pytorch 1.4-1.8. Sequence-to-video conversions require [FFMPEG]. For more explicit details refer to the original implementation. 
 
 ## Features
@@ -20,19 +21,18 @@ Tested on Pytorch 1.4-1.8. Sequence-to-video conversions require [FFMPEG]. For m
 | &boxvr;&nbsp; **_in** | input data for processing
 | &boxvr;&nbsp; **_out** | generation output (sequences & videos)
 | &boxvr;&nbsp; **data** | datasets for training
-| &boxv;&nbsp; &boxvr;&nbsp; afhq | [example] some dataset
-| &boxv;&nbsp; &boxv;&nbsp; &boxvr;&nbsp; cats | [example] images for training
-| &boxv;&nbsp; &boxv;&nbsp; &boxv;&nbsp; &boxur;&nbsp; test | [example] images for validation
-| &boxv;&nbsp; &boxv;&nbsp; &boxvr;&nbsp; dogs | [example] images for training
-| &boxv;&nbsp; &boxv;&nbsp; &boxv;&nbsp; &boxur;&nbsp; test | [example] images for validation
-| &boxv;&nbsp; &boxv;&nbsp; &boxur;&nbsp; &#x22ef; | 
-| &boxv;&nbsp; &boxur;&nbsp;  &#x22ef; | 
+| &boxv;&nbsp; &boxur;&nbsp; afhq | [example] some dataset
+| &boxv;&nbsp; &nbsp;&nbsp; &boxvr;&nbsp; cats | [example] images for training
+| &boxv;&nbsp; &nbsp;&nbsp; &boxv;&nbsp; &boxur;&nbsp; test | [example] images for validation
+| &boxv;&nbsp; &nbsp;&nbsp; &boxvr;&nbsp; dogs | [example] images for training
+| &boxv;&nbsp; &nbsp;&nbsp; &boxv;&nbsp; &boxur;&nbsp; test | [example] images for validation
+| &boxv;&nbsp; &nbsp;&nbsp; &boxur;&nbsp; &#x22ef; | 
 | &boxvr;&nbsp; **models** | trained models for inference/processing
 | &boxv;&nbsp; &boxur;&nbsp;  afhq-256-5-100.pkl | [example] trained model file
 | &boxvr;&nbsp; **src** | source code
 | &boxur;&nbsp; **train** | training folders
-| &ensp;&ensp; &boxvr;&nbsp;  afhq.. | [example] auto-created training folder
-| &ensp;&ensp; &boxur;&nbsp;&#x22ef;  | 
+| &ensp;&ensp; &boxur;&nbsp;  afhq.. | [example] auto-created training folder
+
 
 ## Training
 
@@ -41,13 +41,13 @@ Tested on Pytorch 1.4-1.8. Sequence-to-video conversions require [FFMPEG]. For m
 ```
  python src/train.py --data_dir data/afhq --model_dir train/afhq --img_size 256 --batch 8
 ```
-This will run training process, according to the settings in `src/train.py` (check and explore those!). Results (models and samples) will be saved under `train/afhq` directory. Models are named as `dataset-size-domaincount-kimgs`, e.g. `afhq-256-5-100.ckpt`. 
+This will run training process, according to the settings in `src/train.py` (check and explore those!). Models are saved under `train/afhq` and named as `dataset-size-domaincount-kimgs`, e.g. `afhq-256-5-100.ckpt` (required for resuming). 
 
 #### Few personal findings
 
 1. Model parameters seriously oscillate during training (typical for Cycle- or Star- GANs), so it's better to save models frequently (there may be jewels). The best selected models can be mixed together with `swa.py` script for better stability. By default, Generator network is saved every 1000 iterations, and the full set - every 5000 iterations. 100k iterations may be enough; 200-250k would give pretty nice overfit.
-2. Batch size is crucial for this network! Official settings are `batch=8` for size `256`, if you have large GPU RAM. One can fit batch 3 or 4 on 11gb GPU; those results are also interesting, but less impressive. Batches of 2 or 1 are for the brave only.. Size is better kept as `256`; the network has auto-scaling layer count, but I didn't managed to get comparable results for size `512` with batches up to 7 (max for 32gb).
-3. Lambda coefficients `lambda_ds` (diversity), `lambda_cyc` (reconstruction) and `lambda_sty` (style) may be increased for smaller batches, especially if your goal is stylization, rather than photo-realistic transformation. The works above, for instance, were made with these lambdas equal 3. The reference-based generation is nearly lost with such settings, but latent-based one can make nice art.
+2. Batch size is crucial for this network! Official settings are `batch=8` for size `256`, if you have large GPU RAM. One can fit batch 3 or 4 on 11gb GPU; those results are also interesting, but less impressive. Batches of 2 or 1 are for the brave only.. Size is better kept as `256`; the network has auto-scaling layer count, but I didn't manage to get comparable results for size `512` with batches up to 7 (max for 32gb).
+3. Lambda coefficients `lambda_ds` (diversity), `lambda_cyc` (reconstruction) and `lambda_sty` (style) may be increased for smaller batches, especially if the goal is stylization, rather than photo-realistic transformation. The videos above, for instance, were made with these lambdas equal 3. The reference-based generation is nearly lost with such settings, but latent-based one can make nice art.
 
 ## Generation
 
@@ -56,7 +56,7 @@ This will run training process, according to the settings in `src/train.py` (che
 python src/test.py --source test.jpg --model models/100000_nets_ema.ckpt
 ```
 This will produce 3 images (one per trained domain in the model) in the `_out` directory.  
-If `source` is a directory, every image in it will be processed this way. 
+If `source` is a directory, every image in it will be processed accordingly. 
 
 * Generate output only for the domain(s), referenced by number(s):
 ```
@@ -70,12 +70,13 @@ python src/test.py --source test.jpg --model models/100000_nets_ema.ckpt --ref 1
 
 To be continued..
 
+
 ## Credits
 
-StarGAN2: 
-Copyright © 2020, NAVER Corp. All rights reserved.
-Made available under [Creative Commons BY-NC 4.0] license.
-Original paper: https://arxiv.org/abs/1912.01865
+StarGAN2:  
+Copyright © 2020, NAVER Corp. All rights reserved.  
+Made available under [Creative Commons BY-NC 4.0] license.  
+Original paper: https://arxiv.org/abs/1912.01865  
 
 [Creative Commons BY-NC 4.0]: <https://github.com/clovaai/stargan-v2/blob/master/LICENSE>
 [StarGAN2]: <https://github.com/clovaai/stargan-v2>
