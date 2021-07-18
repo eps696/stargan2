@@ -1,0 +1,6 @@
+munch
+ipywidgets
+torch
+pillow
+imageio
+numpy

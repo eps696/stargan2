@@ -45,9 +45,10 @@ This will run training process, according to the settings in `src/train.py` (che
 
 #### Few personal findings
 
-1. Model parameters seriously oscillate during training (typical for Cycle- or Star- GANs), so it's better to save models frequently (there may be jewels). The best selected models can be mixed together with `swa.py` script for better stability. By default, Generator network is saved every 1000 iterations, and the full set - every 5000 iterations. 100k iterations may be enough; 200-250k would give pretty nice overfit.
+1. Model parameters seriously oscillate during training (typical for Cycle- or Star- GANs), so it's better to save models frequently (there may be jewels). The best selected models can be mixed together with `swa.py` script for better stability. By default, Generator network is saved every 1000 iterations, and the full set - every 5000 iterations. 100k iterations (few days on a single GPU) may be enough; 200-250k would give pretty nice overfit.
 2. Batch size is crucial for this network! Official settings are `batch=8` for size `256`, if you have large GPU RAM. One can fit batch 3 or 4 on 11gb GPU; those results are also interesting, but less impressive. Batches of 2 or 1 are for the brave only.. Size is better kept as `256`; the network has auto-scaling layer count, but I didn't manage to get comparable results for size `512` with batches up to 7 (max for 32gb).
 3. Lambda coefficients `lambda_ds` (diversity), `lambda_cyc` (reconstruction) and `lambda_sty` (style) may be increased for smaller batches, especially if the goal is stylization, rather than photo-realistic transformation. The videos above, for instance, were made with these lambdas equal 3. The reference-based generation is nearly lost with such settings, but latent-based one can make nice art.
+4. The order of domains in the training set matters a lot! I usually put some photos first (as it will be the main source imagery), and the closest to photoreal as second; but other approaches may go well too.
 
 ## Generation
 
