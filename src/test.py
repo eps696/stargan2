@@ -65,7 +65,7 @@ def main():
     args.model_dir = os.path.relpath(os.path.abspath(os.path.dirname(args.model)))
     args.model = basename(args.model)
 
-    solver = Solver(args)
+    solver = Solver(args, device)
     nets_ema = solver.nets_ema
     ckpt = CheckpointIO(args.model_dir, args.model, None, **nets_ema)
     ckpt.load()
