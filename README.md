@@ -3,7 +3,7 @@
 <p align='center'><img src='_out/blink-35.jpg' /></p>
 
 This version of [StarGAN2] (coined as 'Post-modern Style Transfer') is intended mostly for fellow artists, who rarely look at scientific metrics, but rather need a working creative tool. At least, this is what I use nearly daily myself.  
-Here are few pieces, made with it: [Terminal Blink](https://vimeo.com/460679408), [Occurro](https://vimeo.com/527118906), [etc.](https://vimeo.com/445930853)  
+Here are few pieces, made with it: [Terminal Blink](http://www.aiartonline.com/highlights-2020/vadim-epstein), [Occurro](https://vimeo.com/527118906), [etc.](https://vimeo.com/445930853)  
 Tested on Pytorch 1.4-1.8. Sequence-to-video conversions require [FFMPEG]. For more explicit details refer to the original implementation. 
 
 ## Features
