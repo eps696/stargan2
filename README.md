@@ -12,8 +12,6 @@ Tested on Pytorch 1.4-1.8. Sequence-to-video conversions require [FFMPEG]. For m
 * stricter memory management to fit bigger batches on consumer GPUs
 * models mixing (SWA) for better stability
 
-**NB**: In the meantime here's only training code and some basic inference (processing). More various methods & use cases may be added later.
-
 ## Presumed file structure
 
 | stargan2 | root
@@ -64,6 +62,8 @@ This will run training process, according to the settings in `src/train.py` (che
 
 ## Generation
 
+### Single images
+
 * Transform image `test.jpg` with AFHQ model (can be downloaded [here](https://www.dropbox.com/s/etwm810v25h42sn/100000_nets_ema.ckpt?dl=0)):
 ```
 python src/test.py --source test.jpg --model models/100000_nets_ema.ckpt
@@ -73,7 +73,7 @@ If `source` is a directory, every image in it will be processed accordingly.
 
 * Generate output for the domain(s), referenced by number(s):
 ```
-python src/test.py --source test.jpg --model models/100000_nets_ema.ckpt --ref 2
+python src/test.py --source test.jpg --model models/100000_nets_ema.ckpt --ref 0-1-2
 ```
 
 * Generate output with reference image for domain 1 (ref filename must start with that number):
@@ -81,7 +81,25 @@ python src/test.py --source test.jpg --model models/100000_nets_ema.ckpt --ref 2
 python src/test.py --source test.jpg --model models/100000_nets_ema.ckpt --ref 1-ref.jpg
 ```
 
-To be continued..
+### Animation
+
+The commands below would output frame sequences and mp4 videos to the `_out` directory.  
+
+* Process image `_in/test.jpg` with `mymodel.ckpt` model, interpolating between referenced domains, with total duration 100 frames:
+```
+python src/process.py --source _in/test.jpg --model models/mymodel.ckpt --frames 100 --ref 0-1-2
+ffmpeg -y -v warning -i _out/test/%06d.jpg _out/test-mymodel.mp4
+```
+
+* Process video `_in/test.mp4` with `mymodel.ckpt` model, interpolating between referenced domains:
+```
+mkdir _in/test-tmp
+ffmpeg -y -v warning -i _in/test.mp4 _in/test-tmp/%06d.jpg
+python src/process.py --source _in/test-tmp --model models/mymodel.ckpt --ref 0-1-2
+ffmpeg -y -v warning -i _out/test-tmp/%06d.jpg _out/test-mymodel.mp4
+```
+
+May be continued..
 
 
 ## Credits

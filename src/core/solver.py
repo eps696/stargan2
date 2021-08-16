@@ -96,7 +96,7 @@ class Solver(nn.Module):
 
         print('Start training...')
         tblog = SummaryWriter(args.model_dir)
-        pbar = ProgressBar(args.total_iters - args.resume*1000)
+        pbar = ProgressBar(args.total_iters, args.resume*1000)
         for i in range(args.resume*1000, args.total_iters):
             # fetch images and labels
             inputs = next(fetcher)
@@ -141,7 +141,8 @@ class Solver(nn.Module):
                     for key, value in loss.items():
                         tblog.add_scalar(prefix + key, value, i)
                 tblog.add_scalar('G/lambda_ds', args.lambda_ds, i)
-            pbar.upd()
+            if i == args.resume*1000: pbar.reset(args.resume*1000) # drop first long cycle
+            else: pbar.upd()
 
             # generate images for debugging
             if (i+1) % args.sample_every == 0:

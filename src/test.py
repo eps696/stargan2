@@ -86,6 +86,7 @@ def main():
     else:
         if args.refs is not None: # string with class numbers
             cls_refs = [int(cls) for cls in args.refs.split('-')]
+            assert all([ref < args.num_domains for ref in cls_refs]), " refs out of domains: %d" % args.num_domains
         else: # random
             cls_refs = list(range(args.num_domains))
         cls_refs = torch.tensor(cls_refs).to(device) # [n]

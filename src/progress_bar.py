@@ -16,21 +16,22 @@ import time
 import ipywidgets as ipy
 import IPython
 class ProgressIPy(object):
-    def __init__(self, task_num=10):
-        self.pbar = ipy.IntProgress(min=0, max=task_num, bar_style='') # (value=0, min=0, max=max, step=1, description=description, bar_style='')
+    def __init__(self, task_num=10, start_num=0, start=True):
+        self.task_num = task_num - start_num
+        self.pbar = ipy.IntProgress(min=0, max=self.task_num, bar_style='') # (value=0, min=0, max=max, step=1, description=description, bar_style='')
         self.labl = ipy.Label()
         IPython.display.display(ipy.HBox([self.pbar, self.labl]))
-        self.task_num = task_num
         self.completed = 0
-        self.start()
+        self.start_num = start_num
+        if start:
+            self.start()
 
-    def start(self, task_num=None):
+    def start(self, task_num=None, start_num=None):
         if task_num is not None:
             self.task_num = task_num
-        if self.task_num > 0:
-            self.labl.value = '0/{}'.format(self.task_num)
-        else:
-            self.labl.value = 'completed: 0, elapsed: 0s'
+        if start_num is not None:
+            self.start_num = start_num
+        self.labl.value = '{}/{}'.format(self.start_num, self.task_num + self.start_num)
         self.start_time = time.time()
 
     def upd(self, *p, **kw):
@@ -42,12 +43,18 @@ class ProgressIPy(object):
             fin = ' end %s' % finaltime[11:16]
             percentage = self.completed / float(self.task_num)
             eta = int(elapsed * (1 - percentage) / percentage + 0.5)
-            self.labl.value = '{}/{}, rate {:.3g}s, time {}s, left {}s, {}'.format(self.completed, self.task_num, 1./fps, shortime(elapsed), shortime(eta), fin)
+            self.labl.value = '{}/{}, rate {:.3g}s, time {}s, left {}s, {}'.format(self.completed + self.start_num, self.task_num + self.start_num, 1./fps, shortime(elapsed), shortime(eta), fin)
         else:
-            self.labl.value = 'completed {}, time {}s, {:.1f} steps/s'.format(self.completed, int(elapsed + 0.5), fps)
+            self.labl.value = 'completed {}, time {}s, {:.1f} steps/s'.format(self.completed + self.start_num, int(elapsed + 0.5), fps)
         self.pbar.value += 1
         if self.completed == self.task_num: self.pbar.bar_style = 'success'
         return self.completed
+
+    def reset(self, start_num=0, task_num=None):
+        self.start_time = time.time()
+        self.start_num = start_num
+        if task_num is not None:
+            self.task_num = task_num
 
 
 class ProgressBar(object):

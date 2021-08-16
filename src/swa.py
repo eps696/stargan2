@@ -36,7 +36,7 @@ def moving_average(model_main, model_new, epoch):
 def main():
     models = file_list(args.in_dir, 'ckpt')
     # print(len(models))
-    models = [m for m in models if (not '_nets' in m) and (not '_optim' in m)]
+    models = [m for m in models if not '_optim' in m]
     if args.count is not None:
         if (len(models) > args.count):
             models = models[-args.count:]
