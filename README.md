@@ -7,7 +7,7 @@ Here are few pieces, made with it: [Terminal Blink](http://www.aiartonline.com/h
 Tested on Pytorch 1.4-1.8. Sequence-to-video conversions require [FFMPEG]. For more explicit details refer to the original implementation. 
 
 ## Features
-* streamlined workflow, focused on practical tasks [TBA]
+* streamlined workflow, focused on practical tasks
 * cleaned up and simplified code for better readability
 * stricter memory management to fit bigger batches on consumer GPUs
 * models mixing (SWA) for better stability
