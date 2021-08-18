@@ -98,6 +98,10 @@ ffmpeg -y -v warning -i _in/test.mp4 _in/test-tmp/%06d.jpg
 python src/process.py --source _in/test-tmp --model models/mymodel.ckpt --ref 0-1-2
 ffmpeg -y -v warning -i _out/test-tmp/%06d.jpg _out/test-mymodel.mp4
 ```
+or, if you're on Windows:
+```
+process.bat mymodel.ckpt test.mp4 0-1-2
+```
 
 May be continued..
 
