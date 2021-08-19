@@ -116,6 +116,7 @@ def main():
         return styles # [n,64]
 
     # load refs and classes from files
+    assert a.refs is not None, " Set domains to process by --refs argument"
     if osp.exists(a.refs):
         a.fstep = framecount // len(a.refs)
         refs = img_list(a.refs) if osp.isdir(a.refs) else [a.refs]
