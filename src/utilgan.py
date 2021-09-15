@@ -52,6 +52,7 @@ def img_list(path, subdir=None):
     else:
         files = [os.path.join(path, f) for f in os.listdir(path)]
     files = [f for f in files if os.path.splitext(f.lower())[1][1:] in ['jpg', 'jpeg', 'png', 'ppm', 'tif']]
+    files = [f for f in files if not '/__MACOSX/' in f.replace('\\', '/')] # workaround fix for macos phantom files
     return sorted([f for f in files if os.path.isfile(f)])
 
 def file_list(path, ext=None, subdir=None):

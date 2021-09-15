@@ -19,6 +19,7 @@ from torchvision.datasets import ImageFolder
 def listdir(path):
     files = [os.path.join(path, f) for f in os.listdir(path)]
     files = [f for f in files if os.path.splitext(f.lower())[1][1:] in ['jpg', 'jpeg', 'png', 'ppm', 'tif']]
+    files = [f for f in files if not '/__MACOSX/' in f.replace('\\', '/')] # workaround fix for macos phantom files
     return sorted([f for f in files if os.path.isfile(f)])
 
 class ReferenceDataset(data.Dataset):
