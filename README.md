@@ -119,6 +119,7 @@ ffmpeg -y -v warning -i _out/mapping/%06d.jpg _out/mapping.mp4
 ```
 
 * corresponding batch commands on Windows:
+
 `recurs.bat mymodel.ckpt 0-1-2 1280-720 100 --fstep 25`
 `recurs.bat mymodel.ckpt 0-1-2 _in/mapping.jpg 100 --fstep 25` (with mask)
 
