@@ -3,7 +3,7 @@
 <p align='center'><img src='_out/blink-35.jpg' /></p>
 
 This version of [StarGAN2] (coined as 'Post-modern Style Transfer') is intended mostly for fellow artists, who rarely look at scientific metrics, but rather need a working creative tool. At least, this is what I use nearly daily myself.  
-Here are few pieces, made with it: [Terminal Blink](http://www.aiartonline.com/highlights-2020/vadim-epstein), [Occurro](https://vimeo.com/527118906), [etc.](https://vimeo.com/445930853)  
+Here are few pieces, made with it: [Terminal Blink](http://www.aiartonline.com/highlights-2020/vadim-epstein), [Ghosts](https://vimeo.com/633172534), [Occurro](https://vimeo.com/527118906), [etc.](https://vimeo.com/445930853)  
 Tested on Pytorch 1.4-1.8. Sequence-to-video conversions require [FFMPEG]. For more explicit details refer to the original implementation. 
 
 ## Features
@@ -103,7 +103,26 @@ or, if you're on Windows:
 process.bat mymodel.ckpt test.mp4 0-1-2
 ```
 
-May be continued..
+### Recursive generation 
+
+* Generate video sequence `_out/recurs.mp4` with `mymodel.ckpt` model, interpolating between referenced domains (0,1,2) in a feedback loop for 100 frames, switching domain every 25 frames:
+```
+python src/process.py --model models/mymodel.ckpt --refs 0-1-2 --size 1280-720 --frames 100 --fstep 25 --out_dir _out/recurs --recurs 1
+ffmpeg -y -v warning -i _out/recurs/%06d.jpg _out/recurs.mp4
+```
+(to start from existing `image.jpg`, replace `--size 1280-720` with `--source image.jpg`)
+
+* Generate similar video sequence, drawing over contour mask `mapping.jpg` (useful for videomapping projections):
+```
+python src/process.py --model models/mymodel.ckpt --refs 0-1-2 --source mapping.jpg --frames 100 --fstep 25 --out_dir _out/mapping --recurs 0.4
+ffmpeg -y -v warning -i _out/mapping/%06d.jpg _out/mapping.mp4
+```
+
+* corresponding batch commands on Windows:
+`recurs.bat mymodel.ckpt 0-1-2 1280-720 100 --fstep 25`
+`recurs.bat mymodel.ckpt 0-1-2 _in/mapping.jpg 100 --fstep 25` (with mask)
+
+* To add some motion, apply `--move` argument, and edit `scale/shift/angle/shear` parameters if needed. 
 
 
 ## Credits

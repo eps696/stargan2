@@ -21,7 +21,7 @@ from core.solver import Solver
 from core.checkpoint import CheckpointIO
 import core.utils as utils
 
-from utilgan import latent_anima, img_list, basename
+from utilgan import latent_anima, pad_up_to, img_list, basename
 try: # progress bar for notebooks 
     get_ipython().__class__.__name__
     from progress_bar import ProgressIPy as ProgressBar
@@ -34,16 +34,27 @@ parser.add_argument('-i',  '--source',  default=None, help='Directory or file co
 parser.add_argument('-o',  '--out_dir', default='_out', help='Directory to save generated images and videos')
 parser.add_argument(       '--refs',    default=None, help='String of class indices, separated by "-", a la 0-0-10-20-..')
 parser.add_argument(       '--model',   default='models', help='Saved network checkpoint')
+parser.add_argument('-s',  '--size',    default=None, help="if set as 'w-h', resizing source image to it")
 # process 
 parser.add_argument(       '--frames',  type=int, default=None, help="Total number of frames to render")
 parser.add_argument(       '--fstep',   type=int, default=None, help="Number of frames for smooth interpolation")
+parser.add_argument(       '--mstep',   type=int, default=None, help="Number of frames for motion fragment")
 parser.add_argument(       '--rand',    action='store_true', help="Randomize refs order (otherwise original)")
+parser.add_argument('-r',  '--recurs',  default=0, type=float, help="Recursive mode (feedback loop): 0 = no recursion, 1 = full recursion, -1 = animate")
+# motion
+parser.add_argument(       '--move',    action='store_true', help="Move it move it")
+parser.add_argument(       '--scale',   default=0.02, type=float)
+parser.add_argument(       '--shift',   default=10, type=float)
+parser.add_argument(       '--angle',   default=1, type=float)
+parser.add_argument(       '--shear',   default=1, type=float)
 # misc
 parser.add_argument(       '--lowmem',  action='store_true', help="Aggressive memory cleanup for Generator")
 parser.add_argument(       '--parallel', action='store_true', help="Parallel processing?")
 parser.add_argument(       '--gpu',     default=0, type=int, help="Which GPU to use")
 parser.add_argument(       '--seed',    default=None, type=int)
 a = parser.parse_args()
+
+if a.size is not None: a.size = [int(s) for s in a.size.split('-')][::-1]
 
 def checkout(img, i):
     filename = osp.join(a.out_dir, '%06d.jpg' % i)
@@ -56,7 +67,7 @@ def main():
     cudnn.deterministic = True
     device = torch.device('cuda:%d' % a.gpu if torch.cuda.is_available() else 'cpu')
     a.mode = 'process'
-    a.out_dir = os.path.join(a.out_dir, basename(a.source))
+    if a.source is not None: a.out_dir = os.path.join(a.out_dir, basename(a.source))
     os.makedirs(a.out_dir, exist_ok=True)
     if a.seed is not None:
         torch.manual_seed(a.seed)
@@ -90,18 +101,26 @@ def main():
 
 # # # load source[s]
 
-    out_size = None
-    srcs = img_list(a.source) if osp.isdir(a.source) else [a.source]
-    src_count = len(srcs)
-    if src_count == 1: # source = 1 pic
-        img_src = Image.open(srcs[0]).convert('RGB')
-        if out_size is None: out_size = img_src.size[::-1]
-        img_src = transform_src(img_src).to(device).unsqueeze(0)
-        if list(img_src.shape[-2:]) != out_size:
-            img_src = F.interpolate(img_src, size=out_size, mode='bicubic', align_corners=True)
+    out_size = a.size
+    if a.source is None: # start with black
+        if a.recurs != 0: a.size = [int(16*math.ceil(s/16)) for s in a.size]
         framecount = a.frames
-    else: # source = sequence
-        framecount = src_count
+        assert out_size is not None, ' !! Either source or size must be set !! '
+        img_src = np.zeros((*out_size, 3), dtype=np.float32)
+        img_src = transform_src(img_src).to(device).unsqueeze(0)
+        src_count = 1
+    else:
+        srcs = img_list(a.source) if osp.isdir(a.source) else [a.source]
+        src_count = len(srcs)
+        if src_count == 1: # source = 1 pic
+            img_src = Image.open(srcs[0]).convert('RGB')
+            if out_size is None: out_size = img_src.size[::-1]
+            img_src = transform_src(img_src).to(device).unsqueeze(0)
+            if list(img_src.shape[-2:]) != out_size:
+                img_src = F.interpolate(img_src, size=out_size, mode='bicubic', align_corners=True)
+            framecount = a.frames
+        else: # source = sequence
+            framecount = src_count
     assert framecount is not None and framecount != 0, ' !! Undefined source framecount !! '
 
 # # # load refs, make styles
@@ -156,6 +175,21 @@ def main():
     styles = torch.tensor(styles.astype(np.float32)).to(device).unsqueeze(1) # [n,1,64]
 
     framecount = styles.shape[0]
+    if a.recurs < 0:
+        recursa = abs(a.recurs) * latent_anima([1], framecount, a.fstep, plain=True, seed=a.seed, verbose=True)
+        recursa = torch.tensor(recursa.astype(np.float32)).to(device)
+
+    # make motion timeline
+    if a.mstep is None: a.mstep = a.fstep
+    if a.move is True and a.recurs != 0:
+        m_scale = latent_anima([1], framecount, a.mstep, uniform=True, cubic=True, start_lat=[0.5], seed=a.seed, verbose=False)
+        m_shift = latent_anima([2], framecount, a.mstep, uniform=True, cubic=True, start_lat=[0.5,0.5], seed=a.seed, verbose=False)
+        m_angle = latent_anima([1], framecount, a.mstep, uniform=True, cubic=True, start_lat=[0.5], seed=a.seed, verbose=False)
+        m_shear = latent_anima([1], framecount, a.mstep, uniform=True, cubic=True, start_lat=[0.5], seed=a.seed, verbose=False)
+        m_scale = 1 - (m_scale-0.5) * a.scale
+        m_shift = (m_shift-0.5) * a.shift
+        m_angle = (m_angle-0.5) * a.angle
+        m_shear = (m_shear-0.5) * a.shear
 
     pbar = ProgressBar(framecount)
     for i in range(framecount):
@@ -170,10 +204,32 @@ def main():
             if list(img_src.shape[-2:]) != out_size:
                 img_src = F.interpolate(img_src, size=out_size, mode='bicubic', align_corners=True)
 
+        if a.recurs != 0 and i > 0:
+            recurs = recursa[i] if a.recurs == -1 else a.recurs
+            img_cur = (1 - recurs) * img_src + recurs * img_prev
+
+            # motion
+            if a.move is True:
+                scale =       m_scale[i] # 1.02
+                shift = tuple(m_shift[i]) # [2,0]
+                angle =       m_angle[i][0] # -1
+                shear =       m_shear[i][0] # 0.1
+                if float(torch.__version__[:3]) < 1.8: # 1.7.1
+                    img_cur = T.functional.affine(img_cur, angle=angle, translate=shift, scale=scale, shear=shear, resample=eval('Image.BILINEAR'))
+                    img_cur = T.functional.center_crop(img_cur, out_size)
+                    img_cur = pad_up_to(img_cur, out_size)
+                else: # 1.8+
+                    img_cur = T.functional.affine(img_cur, angle=angle, translate=shift, scale=scale, shear=shear, interpolation=eval('T.InterpolationMode.BILINEAR'))
+                    img_cur = T.functional.center_crop(img_cur, out_size) # on 1.8+ also pads
+
+        else:
+            img_cur = img_src
+
         style = styles[i] # [64]
-        img_out = nets_ema.generator(img_src, style)
+        img_out = nets_ema.generator(img_cur, style)
         if img_out.shape[-2:][::-1] != out_size:
             img_out = F.interpolate(img_out, size=out_size, mode='bicubic', align_corners=True)
+        if a.recurs != 0: img_prev = img_out
 
         img_out = utils.post_np(img_out)
         checkout(img_out[0], i)

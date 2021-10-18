@@ -121,7 +121,7 @@ def cublerp(points, steps, fstep):
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = 
     
-def latent_anima(shape, frames, transit, key_latents=None, smooth=0.5, cubic=False, gauss=False, seed=None, verbose=True):
+def latent_anima(shape, frames, transit, key_latents=None, smooth=0.5, uniform=False, cubic=False, gauss=False, start_lat=None, seed=None, verbose=True):
     if key_latents is None:
         transit = int(max(1, min(frames, transit)))
     steps = max(1, int(frames // transit))
@@ -133,7 +133,9 @@ def latent_anima(shape, frames, transit, key_latents=None, smooth=0.5, cubic=Fal
     
     # make key points
     if key_latents is None:
-        key_latents = np.array([get_z(shape, rnd) for i in range(steps)])
+        key_latents = np.array([get_z(shape, rnd, uniform) for i in range(steps)])
+    if start_lat is not None:
+        key_latents[0] = start_lat
 
     latents = np.expand_dims(key_latents[0], 0)
     
@@ -148,7 +150,10 @@ def latent_anima(shape, frames, transit, key_latents=None, smooth=0.5, cubic=Fal
             for i in range(steps):
                 zA = key_latents[i]
                 zB = key_latents[(i+1) % steps]
-                interps_z = slerp(zA, zB, transit, smooth=smooth)
+                if uniform is True:
+                    interps_z = lerp(zA, zB, transit, smooth=smooth)
+                else:
+                    interps_z = slerp(zA, zB, transit, smooth=smooth)
                 latents = np.concatenate((latents, interps_z))
     latents = np.array(latents)
     
@@ -165,3 +170,42 @@ def latent_anima(shape, frames, transit, key_latents=None, smooth=0.5, cubic=Fal
     
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = 
     
+# Tiles an array around two points, allowing for pad lengths greater than the input length
+# NB: if symm=True, every second tile is mirrored = messed up in GAN
+# adapted from https://discuss.pytorch.org/t/symmetric-padding/19866/3
+def tile_pad(xt, padding, symm=True):
+    h, w = xt.shape[-2:]
+    left, right, top, bottom = padding
+ 
+    def tile(x, minx, maxx, symm=True):
+        rng = maxx - minx
+        if symm is True: # triangular reflection
+            double_rng = 2*rng
+            mod = np.fmod(x - minx, double_rng)
+            normed_mod = np.where(mod < 0, mod+double_rng, mod)
+            out = np.where(normed_mod >= rng, double_rng - normed_mod, normed_mod) + minx
+        else: # repeating tiles
+            mod = np.remainder(x - minx, rng)
+            out = mod + minx
+        return np.array(out, dtype=x.dtype)
+
+    x_idx = np.arange(-left, w+right)
+    y_idx = np.arange(-top, h+bottom)
+    x_pad = tile(x_idx, -0.5, w-0.5, symm)
+    y_pad = tile(y_idx, -0.5, h-0.5, symm)
+    xx, yy = np.meshgrid(x_pad, y_pad)
+    return xt[..., yy, xx]
+
+def pad_up_to(x, size, type='centr'):
+    sh = x.shape[2:][::-1]
+    if list(x.shape[2:]) == list(size): return x
+    padding = []
+    for i, s in enumerate(size[::-1]):
+        if 'side' in type.lower():
+            padding = padding + [0, s-sh[i]]
+        else: # centr
+            p0 = (s-sh[i]) // 2
+            p1 = s-sh[i] - p0
+            padding = padding + [p0,p1]
+    y = tile_pad(x, padding, symm = 'symm' in type.lower())
+    return y
