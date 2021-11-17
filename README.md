@@ -2,6 +2,8 @@
 
 <p align='center'><img src='_out/blink-35.jpg' /></p>
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eps696/stargan2/blob/master/StarGAN2_colab.ipynb)
+
 This version of [StarGAN2] (coined as 'Post-modern Style Transfer') is intended mostly for fellow artists, who rarely look at scientific metrics, but rather need a working creative tool. At least, this is what I use nearly daily myself.  
 Here are few pieces, made with it: [Terminal Blink](http://www.aiartonline.com/highlights-2020/vadim-epstein), [Ghosts](https://vimeo.com/633172534), [Occurro](https://vimeo.com/527118906), [etc.](https://vimeo.com/445930853)  
 Tested on Pytorch 1.4-1.8. Sequence-to-video conversions require [FFMPEG]. For more explicit details refer to the original implementation. 
@@ -121,6 +123,7 @@ ffmpeg -y -v warning -i _out/mapping/%06d.jpg _out/mapping.mp4
 * corresponding batch commands on Windows:
 
 `recurs.bat mymodel.ckpt 0-1-2 1280-720 100 --fstep 25`
+
 `recurs.bat mymodel.ckpt 0-1-2 _in/mapping.jpg 100 --fstep 25` (with mask)
 
 * To add some motion, apply `--move` argument, and edit `scale/shift/angle/shear` parameters if needed. 
