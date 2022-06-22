@@ -28,7 +28,7 @@ class ReferenceDataset(data.Dataset):
         self.transform = transform
 
     def _make_dataset(self, root):
-        domains = [d for d in os.listdir(root) if os.path.isdir(os.path.join(root,d))]
+        domains = sorted([d for d in os.listdir(root) if os.path.isdir(os.path.join(root,d))])
         fnames, fnames2, labels = [], [], []
         for idx, domain in enumerate(domains):
             class_dir = os.path.join(root, domain)
@@ -65,7 +65,7 @@ class TrainValDataset(data.Dataset):
         self.targets = [s[1] for s in self.samples]
 
     def _make_dataset(self, root, mode):
-        domains = [d for d in os.listdir(root) if os.path.isdir(os.path.join(root,d))]
+        domains = sorted([d for d in os.listdir(root) if os.path.isdir(os.path.join(root,d))])
         if mode == 'train': print(' domains', domains)
         fnames, labels = [], []
         for idx, domain in enumerate(domains):
