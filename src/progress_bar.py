@@ -16,17 +16,21 @@ import time
 import ipywidgets as ipy
 import IPython
 class ProgressIPy(object):
-    def __init__(self, task_num=10):
-        self.pbar = ipy.IntProgress(min=0, max=task_num, bar_style='') # (value=0, min=0, max=max, step=1, description=description, bar_style='')
+    # def __init__(self, task_num=10):
+    def __init__(self, count=0, start_num=0):
+        self.task_num = count - start_num
+        self.pbar = ipy.IntProgress(min=0, max=self.task_num, bar_style='') # (value=0, min=0, max=max, step=1, description=description, bar_style='')
         self.labl = ipy.Label()
         IPython.display.display(ipy.HBox([self.pbar, self.labl]))
-        self.task_num = task_num
         self.completed = 0
+        self.start_num = start_num
         self.start()
 
-    def start(self, task_num=None):
+    def start(self, task_num=None, start_num=None):
         if task_num is not None:
             self.task_num = task_num
+        if start_num is not None:
+            self.start_num = start_num
         if self.task_num > 0:
             self.labl.value = '0/{}'.format(self.task_num)
         else:
@@ -48,6 +52,12 @@ class ProgressIPy(object):
         self.pbar.value += 1
         if self.completed == self.task_num: self.pbar.bar_style = 'success'
         return self.completed
+
+    def reset(self, start_num=0, count=None):
+        self.start_time = time.time()
+        self.start_num = start_num
+        if count is not None:
+            self.task_num = count
 
 
 class ProgressBar(object):
