@@ -4,3 +4,4 @@ torch
 pillow
 imageio
 numpy
+tensorboard==2.10
